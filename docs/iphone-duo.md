@@ -58,7 +58,7 @@ frames -d "iPhone Duo Laptop Pose" -c "Star White" inner-portrait.png
 
 Book Pose accepts 2853 × 2007 screenshots and Laptop Pose accepts 2007 × 2853 screenshots, plus mockups at Apple's announced 2670 × 1878 and 1878 × 2670. Both come in Night Sky (the default) and Star White, and follow your saved default color for iPhone Duo Inner until you pick one for them in `frames colors`.
 
-The poses need Frames 1.7.2 or later and asset pack 4.2.2. Run `frames setup` to download the pack. With an older pack, asking for a pose tells you to run `frames setup`, and `frames doctor` notes that the pack predates the poses. `frames list` shows them under Manual frames once they are installed. Framing a screenshot uses Pillow only.
+The poses need Frames 1.7.2 or later and asset pack 4.2.2. Run `frames setup` to download the pack. With an older pack, asking for a pose tells you to run `frames setup`, and `frames doctor` notes that the pack predates the poses. `frames list` shows them under Manual frames once they are installed. The Swift renderer composites each projected region, the display mask, and the camera layers.
 
 Frames 1.7.3 or later also frames screen recordings in both poses; see [Videos](#videos). Frames 1.7.2 frames screenshots only.
 
@@ -98,10 +98,10 @@ Merged images and videos show devices at their real relative sizes. From Apple's
 
 ## Rebuild the pack
 
-The standard pack adds Apple's iPhone Duo artwork to the previous pack with `scripts/build_duo_assets.py`. Download Apple's [iPhone Duo artwork](https://devimages-cdn.apple.com/design/resources/download/Bezel-iPhone-Duo.dmg) and keep its `PNG` folder next to `Apple Design Resources License.rtf`. The base pack must not already include Duo, and the output folder and ZIP must not exist:
+The standard pack adds Apple's iPhone Duo artwork to the previous pack with `frames-pack build-duo`. Download Apple's [iPhone Duo artwork](https://devimages-cdn.apple.com/design/resources/download/Bezel-iPhone-Duo.dmg) and keep its `PNG` folder next to `Apple Design Resources License.rtf`. The base pack must not already include Duo, and the output folder and ZIP must not exist:
 
 ```bash
-python3 scripts/build_duo_assets.py \
+swift run frames-pack build-duo \
   --source /path/to/Bezel-iPhone-Duo/PNG \
   --base-assets /path/to/Frames \
   --output /path/to/new/Frames \
@@ -110,10 +110,10 @@ python3 scripts/build_duo_assets.py \
 
 This builder copies the base PNGs unchanged and adds ten bezels, five screen masks, and six size entries to `NewFrames.json`. It checks each opening against the expected geometry, keeps the camera in the bezel, preserves the outer display's asymmetric corners, and verifies that lossless optimization leaves every decoded pixel unchanged. The ZIP has a fixed file order and timestamps. Apple's Design Resources License, included in the pack, governs the artwork; the repository's MIT license does not replace it.
 
-The partially open poses come from the Photoshop templates in the same download. `scripts/build_duo_folded_assets.py` adds them to a pack that already has iPhone Duo. It needs only Python and Pillow, and reads the templates' layers directly. It writes each pose's two frames, screen mask, and camera layers, plus one catalog entry per pose with the perspective, camera, and reflection data. The build fails if a pose would enlarge a native screenshot anywhere on the display:
+The partially open poses come from the Photoshop templates in the same download. `frames-pack build-duo-folded` adds them to a pack that already has iPhone Duo. The Swift tool reads the templates' layers directly. It writes each pose's two frames, screen mask, and camera layers, plus one catalog entry per pose with the perspective, camera, and reflection data. The build fails if a pose would enlarge a native screenshot anywhere on the display:
 
 ```bash
-python3 scripts/build_duo_folded_assets.py \
+swift run frames-pack build-duo-folded \
   --source /Volumes/Bezel-iPhone-Duo/Photoshop \
   --base-assets /path/to/Frames \
   --output /path/to/Frames-with-folded-Duo
@@ -121,10 +121,10 @@ python3 scripts/build_duo_folded_assets.py \
 
 Use `frames --assets /path/to/Frames-with-folded-Duo -d "iPhone Duo Book Pose" inner-landscape.png` to try the built pack.
 
-`scripts/release_pack.py` turns a built pack into a release. It checks that every file of the previous pack is still there and byte-identical, that the catalog only gains the named entries, and that every new file is a PNG for one of them. Then it copies the pack to a new folder, sets `version.txt`, writes the ZIP, and prints its size and SHA-256. The previous pack can be its published ZIP or a folder:
+`frames-pack release` turns a built pack into a release. It checks that every file of the previous pack is still there and byte-identical, that the catalog only gains the named entries, and that every new file is a PNG for one of them. Then it copies the pack to a new folder, sets `version.txt`, writes the ZIP, and prints its size and SHA-256. The previous pack can be its published ZIP or a folder:
 
 ```bash
-python3 scripts/release_pack.py /path/to/Frames-with-folded-Duo \
+swift run frames-pack release /path/to/Frames-with-folded-Duo \
   --base /path/to/AppleFrames421.zip \
   --version 4.2.2 \
   --added "iPhone Duo Inner Partially Open Landscape" \

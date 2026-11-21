@@ -5,7 +5,7 @@ description: Frame screenshots and screen recordings with the `frames` CLI. Use 
 
 # Apple Frames CLI
 
-`frames` 1.8.0 is a single-file Python CLI that applies Apple device bezels to screenshots and videos, auto-detects devices from input dimensions, applies masks when needed, and can merge multiple framed results. Video support uses external `ffmpeg` 5.1+ and `ffprobe` 5.1+ with no extra Python media stack.
+`frames` is a Swift Package executable on macOS. It applies Apple device bezels to screenshots and videos, matches input dimensions, and can merge multiple framed results. The `FramesCore` product uses the system image and video frameworks.
 
 ## What Agents Should Know
 
@@ -17,10 +17,10 @@ description: Frame screenshots and screen recordings with the `frames` CLI. Use 
 - On macOS, the default asset location is the Apple Frames shortcut folder in iCloud Drive. That avoids downloading a second copy when the user already has the shortcut assets installed.
 - Use `frames video ...` for `.mp4`, `.mov`, and `.m4v`; the default `frames ...` path is for images.
 - Use `frames video-info ...` to probe videos and resolve the matching frame metadata without rendering.
-- Video framing requires external `ffmpeg` 5.1+ and `ffprobe` 5.1+. `frames setup` checks this and can offer a Homebrew install on macOS; `frames doctor` reports video tool readiness.
+- Video framing uses AVFoundation. `frames doctor` reports the asset and configuration status.
 - `frames video` preserves single-video audio by default. Pass `--strip-audio` when the user asks for silent output, privacy-safe delivery, or validation clips where audio does not matter.
 - `frames video --preset compact|balanced|best` controls H.264/HEVC export size/quality, including HEVC-alpha; `best` is the default. The default video canvas is opaque white except with `--alpha` or `--codec hevc-alpha`. For small opaque exports, use `--preset compact` with `--background black` or `--background "#RRGGBB"`. Video exports report output file size and source-vs-output savings in human and JSON output.
-- Use `frames video --codec hevc-alpha ...` for transparent HEVC-with-alpha `.mov` delivery on macOS with a compatible ffmpeg build. Use `--alpha` or `--background transparent` for ProRes 4444 `.mov` editing/compositing output unless `--codec hevc-alpha` is explicitly selected. Normal H.264/HEVC MP4 output is opaque; legacy `--alpha --codec hevc` still selects ProRes.
+- Use `frames video --codec hevc-alpha ...` for transparent HEVC-with-alpha `.mov` delivery on a Mac with a compatible native encoder. Use `--alpha` or `--background transparent` for ProRes 4444 `.mov` editing/compositing output unless `--codec hevc-alpha` is explicitly selected. Normal H.264/HEVC MP4 output is opaque; legacy `--alpha --codec hevc` still selects ProRes.
 - Explicit ProRes and HEVC-alpha output file paths must use a `.mov` extension. Use an output directory when you want the CLI to pick the `.mov` filename.
 - Use `frames video --rotate clockwise|counterclockwise|180 ...` when a screen recording's visual orientation differs from its encoded dimensions. This is common with some landscape iPad recordings that probe as portrait.
 - H.264/HEVC MP4 and HEVC-alpha MOV exports pad odd dimensions to even encoded dimensions. Check `output_dimensions` and `padded` for individual outputs, or top-level `dimensions` for merges, in JSON output.
@@ -132,7 +132,7 @@ frames setup /path/to/Frames
   - `--assets PATH` to override asset discovery
   - `-v` / `--verbose` for variant, resize, and mask details
 - Use `frames video --help` and `frames video-info --help` for the human-facing video examples and option summaries.
-- `frames colors` is interactive in a real terminal. If stdin is not a TTY, or `curses` is unavailable, it falls back to a plain printed color list.
+- `frames colors` is interactive in a real terminal. Non-interactive runs print a color list. Use the arrow keys to navigate, Space to select, and Enter to save. Use `frames colors --device NAME --color COLOR` to save a default directly.
 - `frames list-colors` does partial device-name matching. `frames list-colors "17 Pro"` is valid.
 - Directory inputs are expanded one level deep only. The CLI scans top-level image files inside the directory; it is not recursive.
 - Supported input image extensions are `.png`, `.jpg`, `.jpeg`, `.heic`, `.tiff`, and `.webp`.
@@ -155,9 +155,9 @@ frames setup /path/to/Frames
 - `--background` accepts only `white`, `black`, `transparent`, or `#RRGGBB`. The default canvas is opaque white, including with `--codec prores`; `--alpha` or `--codec hevc-alpha` changes the default to transparent. `--background transparent` selects ProRes MOV unless `--codec hevc-alpha` is explicit.
 - `--codec h264` is the default. Plain `--codec hevc` selects opaque HEVC MP4. `--codec prores` selects alpha-capable ProRes 4444 MOV; use `--alpha` or `--background transparent` for a transparent canvas. Explicit `--codec hevc-alpha` selects macOS VideoToolbox HEVC-with-alpha MOV, even when combined with `--alpha`. Without explicit `hevc-alpha`, `--alpha` takes precedence over `--codec hevc` and selects ProRes.
 - Use HEVC-alpha for compact delivery to Apple-compatible software that supports HEVC-with-alpha. Use ProRes 4444 (`yuva444p12le`) for editing and compositing. Verify the intended receiving app; HEVC-alpha support is not universal.
-- `--preset compact|balanced|best` controls H.264/HEVC hardware bitrate and software CRF. For HEVC-alpha, these presets set target bitrates of 4M, 7M, and 10M respectively; `best` is the default. Targets are not guaranteed file sizes. ProRes MOV files can be much larger; all presets keep the same ProRes settings.
-- `--quality N` is an expert software H.264/HEVC CRF override; lower is higher quality. HEVC-alpha rejects `--quality`; use `--preset` instead.
-- HEVC-alpha requires macOS and an ffmpeg build with `hevc_videotoolbox`, its `alpha_quality` option, and BGRA input support. The CLI checks these before rendering and reports unsupported configurations without silently falling back to an opaque codec. If unavailable, update ffmpeg or explicitly choose ProRes with `--alpha` and remove `--codec hevc-alpha`. `doctor` checks general video tool readiness; it does not certify HEVC-alpha support.
+- `--preset compact|balanced|best` controls H.264/HEVC target bitrate. For HEVC-alpha, these presets set target bitrates of 4M, 7M, and 10M respectively; `best` is the default. Targets are not guaranteed file sizes. ProRes MOV files can be much larger; all presets keep the same ProRes settings.
+- `--quality N` is a native H.264/HEVC quality override from 0 to 51; lower is higher quality. HEVC-alpha rejects `--quality`; use `--preset` instead.
+- HEVC alpha uses AVFoundation’s native encoder. Export availability depends on the device and requested dimensions.
 - `--rotate clockwise|counterclockwise|180` is applied before device matching, resizing, masks, and framing.
 - `--color random` randomizes independently per input. `--colors "A,B,random"` maps values to expanded inputs by order and the count must match after directory expansion.
 - `video-info` accepts `--device`, `--color`, `--colors`, and `--rotate`; it uses the same resolution rules as `frames video`.
@@ -210,7 +210,6 @@ Setup behavior:
 - `frames setup /path/to/Frames` points the CLI at an existing asset folder instead of downloading.
 - `--assets` and `setup PATH` take a local folder, not a URL or ZIP file. The separate `Frames-Duo-Experimental` pack from 1.4.1 is superseded; switch users to the standard pack with `frames setup`.
 - The asset folder must contain `NewFrames.json`, `version.txt`, and the frame/mask PNGs.
-- Setup checks `ffmpeg`/`ffprobe` for video framing and can install ffmpeg through Homebrew on macOS when run interactively.
 - `frames setup --subfolder` and `frames setup --no-subfolder` update the default save behavior in config.
 - Invalid config produces an actionable error instead of silently discarding saved settings. `frames doctor` remains usable and reports config problems; fix the reported config issue before retrying.
 - `frames doctor` is the first command to run when assets were moved, edited, corrupted, or when video dependencies need verification.
@@ -286,5 +285,5 @@ If an exact older variant is required, pass `--device` with the exact frame name
 6. Choose `--preset compact` for smaller video exports. For transparency, use `--codec hevc-alpha` for Apple-compatible delivery on macOS, or `--alpha` for ProRes editing/compositing output. Use an explicit opaque `--background black` or `--background "#RRGGBB"` when requested.
 7. For multi-video previews, choose `frames video -m` for simultaneous playback and `frames video -m --playback-offset` for left-to-right sequential playback.
 8. Prefer `--strip-audio` for generated test artifacts unless the user specifically wants audio preserved.
-9. After video rendering, verify with `ffprobe` when final output audio state, duration, codec, or stream count matters. For HEVC-alpha transparency, verify with a native Apple decoder or the intended Apple app: `ffprobe` and software HEVC decoding may expose only the opaque `yuv420p` base layer. That alone does not prove alpha is missing.
+9. Check the exported file when audio, duration, or codec matters. Use `ffprobe` if available for stream metadata. Verify HEVC-alpha transparency with a native Apple decoder or the intended Apple app, since software decoders may expose only the opaque base layer.
 10. If an iPad screen recording probes as portrait but the visible content is landscape, rerun `video-info` with `--rotate counterclockwise` or `--rotate clockwise` and verify it resolves to the landscape frame before rendering.

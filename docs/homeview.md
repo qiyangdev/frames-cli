@@ -35,4 +35,14 @@ A QuickTime capture must be exactly the 1080 × 1080 screen. If you crop a scree
 
 ## Rebuild the frames
 
-`scripts/build_homeview_assets.py` builds the frames from six Apple Store images. Its docstring has the download commands. The builder finds the display opening in each image, removes the picture, and scales the image so the opening is exactly 1088 × 1088. The opening is the same size relative to the body as on the real device: 86.3% of its 145.5 mm width.
+`swift run frames-pack build-homeview --source RENDERS --base-assets BASE --output OUTPUT` builds the frames from six Apple Store renders. Save the renders at 4000 × 4000 using these names and URLs.
+
+```bash
+for name in select-silver select-starlight select-rosepink select-spacegray \
+            wallmount-select-silver wallmount-select-spacegray; do
+  curl -o "homeview-$name-202610.png" \
+    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/homeview-$name-202610?wid=4000&hei=4000&fmt=png-alpha"
+done
+```
+
+The builder finds the display opening in each image, removes the picture, and scales the image so the opening is exactly 1088 × 1088. The opening is the same size relative to the body as on the real device: 86.3% of its 145.5 mm width.

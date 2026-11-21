@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Migrate the framing CLI to Swift. Build `frames` on macOS 15 or later with Swift 6.
+- Add the `FramesCore` library for macOS 15 and iOS/iPadOS 18 or later. Image and video processing use Apple's media frameworks.
+- Move the asset builders and pack maintenance commands into the macOS `frames-pack` executable.
+- Keep the existing asset catalog and saved CLI settings compatible with the Swift implementation.
+
 ## 1.8.0 — 2026-11-18
 
 Frames adds Apple device bezels to screenshots and screen recordings from the command line. Version 1.8.0 adds Apple HomeView and moves to asset pack 4.3.1. Run `frames setup` after updating to download it.

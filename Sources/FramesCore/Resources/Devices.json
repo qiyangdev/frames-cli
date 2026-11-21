@@ -1,0 +1,449 @@
+{
+  "colors": {
+    "iPhone Duo Outer Portrait": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Outer Landscape": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Inner Portrait": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Inner Landscape": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Inner Partially Open Landscape": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Inner Partially Open Portrait": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone Duo Outer Open": [
+      "Night Sky",
+      "Star White"
+    ],
+    "iPhone 18 Pro Portrait": [
+      "Burgundy",
+      "Glacier",
+      "Silver",
+      "Black"
+    ],
+    "iPhone 18 Pro Landscape": [
+      "Burgundy",
+      "Glacier",
+      "Silver",
+      "Black"
+    ],
+    "iPhone 18 Pro Max Portrait": [
+      "Burgundy",
+      "Glacier",
+      "Silver",
+      "Black"
+    ],
+    "iPhone 18 Pro Max Landscape": [
+      "Burgundy",
+      "Glacier",
+      "Silver",
+      "Black"
+    ],
+    "iPhone 17 Pro Portrait": [
+      "Cosmic Orange",
+      "Deep Blue",
+      "Silver"
+    ],
+    "iPhone 17 Pro Landscape": [
+      "Cosmic Orange",
+      "Deep Blue",
+      "Silver"
+    ],
+    "iPhone 17 Pro Max Portrait": [
+      "Cosmic Orange",
+      "Deep Blue",
+      "Silver"
+    ],
+    "iPhone 17 Pro Max Landscape": [
+      "Cosmic Orange",
+      "Deep Blue",
+      "Silver"
+    ],
+    "iPhone 17 Portrait": [
+      "Black",
+      "Lavender",
+      "Mist Blue",
+      "Sage",
+      "White"
+    ],
+    "iPhone 17 Landscape": [
+      "Black",
+      "Lavender",
+      "Mist Blue",
+      "Sage",
+      "White"
+    ],
+    "iPhone Air Portrait": [
+      "Black",
+      "White",
+      "Gold",
+      "Blue"
+    ],
+    "iPhone Air Landscape": [
+      "Black",
+      "White",
+      "Gold",
+      "Blue"
+    ],
+    "MacBook Pro M5 14": [
+      "Silver",
+      "Space Black"
+    ],
+    "MacBook Pro M5 16": [
+      "Silver",
+      "Space Black"
+    ],
+    "MacBook Pro PROLED 14": [
+      "Silver",
+      "Space Black"
+    ],
+    "MacBook Pro PROLED 16": [
+      "Silver",
+      "Space Black"
+    ],
+    "MacBook Neo": [
+      "Blush",
+      "Citrus",
+      "Indigo",
+      "Silver"
+    ],
+    "iPhone 16 Pro Portrait": [
+      "Natural",
+      "Desert",
+      "Black",
+      "White"
+    ],
+    "iPhone 16 Pro Landscape": [
+      "Natural",
+      "Desert",
+      "Black",
+      "White"
+    ],
+    "iPhone 16 Pro Max Portrait": [
+      "White",
+      "Desert",
+      "Natural",
+      "Black"
+    ],
+    "iPhone 16 Pro Max Landscape": [
+      "Black",
+      "Desert",
+      "Natural",
+      "White"
+    ],
+    "iPhone 16 Portrait": [
+      "Ultramarine",
+      "Teal",
+      "Pink",
+      "Black",
+      "White"
+    ],
+    "iPhone 16 Landscape": [
+      "Ultramarine",
+      "Teal",
+      "Pink",
+      "Black",
+      "White"
+    ],
+    "iPhone 16 Plus Portrait": [
+      "Ultramarine",
+      "White",
+      "Teal",
+      "Pink",
+      "Black"
+    ],
+    "iPhone 16 Plus Landscape": [
+      "Ultramarine",
+      "Teal",
+      "Pink",
+      "Black",
+      "White"
+    ],
+    "iPad mini A20 Pro Portrait": [
+      "Midnight",
+      "Starlight"
+    ],
+    "iPad mini A20 Pro Landscape": [
+      "Midnight",
+      "Starlight"
+    ],
+    "Watch Ultra 4": [
+      "Black + Alpine Loop Burgundy",
+      "Black + Ocean Band Translucent Black",
+      "Black + Trail Loop Burgundy",
+      "Natural + Alpine Loop Desert",
+      "Natural + Ocean Band Translucent Gray",
+      "Natural + Trail Loop Sand"
+    ],
+    "Watch Ultra 3": [
+      "Black + Alpine Loop Black",
+      "Black + Alpine Loop Light Blue",
+      "Black + Milanese Loop",
+      "Black + Ocean Band Anchor Blue",
+      "Black + Ocean Band Black",
+      "Black + Trail Loop Black Charcoal",
+      "Natural + Alpine Loop Light Blue",
+      "Natural + Alpine Loop Terra Cotta",
+      "Natural + Milanese Loop",
+      "Natural + Ocean Band Anchor Blue",
+      "Natural + Ocean Band Neon Green",
+      "Natural + Trail Loop Blue Bright Blue",
+      "Natural + Trail Loop Green Neon"
+    ],
+    "Watch Ultra 2024": [
+      "Orange Beige Trail Loop",
+      "Blue Alpine Loop",
+      "Orange Ocean Band",
+      "Black + Alpine Loop Dark Green",
+      "Black + Alpine Loop Navy",
+      "Black + Alpine Loop Tan",
+      "Black + Ocean Band Black",
+      "Black + Ocean Band Ice Blue",
+      "Black + Ocean Band Navy",
+      "Black + Titanium Milanese Loop",
+      "Black + Trail Loop Black",
+      "Black + Trail Loop Blue",
+      "Black + Trail Loop Green",
+      "Natural + Alpine Loop Dark Green",
+      "Natural + Alpine Loop Navy",
+      "Natural + Alpine Loop Tan",
+      "Natural + Ocean Band Black",
+      "Natural + Ocean Band Ice Blue",
+      "Natural + Ocean Band Navy",
+      "Natural + Titanium Milanese Loop",
+      "Natural + Trail Loop Black",
+      "Natural + Trail Loop Blue"
+    ],
+    "MacBook Air M5 13": [
+      "Midnight",
+      "Silver",
+      "Sky Blue",
+      "Starlight"
+    ],
+    "MacBook Air M5 15": [
+      "Midnight",
+      "Silver",
+      "Sky Blue",
+      "Starlight"
+    ],
+    "iMac M4": [
+      "Silver",
+      "Blue",
+      "Green",
+      "Orange",
+      "Pink",
+      "Purple",
+      "Yellow"
+    ],
+    "Studio Display": [
+      "Light",
+      "Dark"
+    ],
+    "Studio Display XDR": [
+      "Light",
+      "Dark"
+    ],
+    "HomeView": [
+      "Silver",
+      "Starlight",
+      "Rose Pink",
+      "Space Gray"
+    ],
+    "HomeView Wall Mounted": [
+      "Silver",
+      "Space Gray"
+    ],
+    "Watch Series 11 42": [
+      "Aluminum Jet Black + Sport Band Black",
+      "Aluminum Jet Black + Sport Loop Dark Gray",
+      "Aluminum Rose Gold + Sport Band Light Blush",
+      "Aluminum Rose Gold + Sport Loop Purple Fog",
+      "Aluminum Silver + Sport Band Neon Yellow",
+      "Aluminum Silver + Sport Band Purple Fog",
+      "Aluminum Silver + Sport Loop Forest",
+      "Aluminum Silver + Sport Loop Neon Yellow",
+      "Aluminum Space Gray + Sport Band Anchor Blue",
+      "Aluminum Space Gray + Sport Band Black",
+      "Aluminum Space Gray + Sport Loop Anchor Blue",
+      "Aluminum Space Gray + Sport Loop Forest",
+      "Titanium Gold + Magnetic Link Sage Gray",
+      "Titanium Gold + Milanese Loop",
+      "Titanium Gold + Sport Band Light Blush",
+      "Titanium Gold + Sport Band Purple Fog",
+      "Titanium Natural + Magnetic Link Caramel",
+      "Titanium Natural + Milanese Loop",
+      "Titanium Natural + Sport Band Stone Gray",
+      "Titanium Slate + Magnetic Link Navy",
+      "Titanium Slate + Milanese Loop",
+      "Titanium Slate + Sport Band Black"
+    ],
+    "Watch Series 11 46": [
+      "Aluminum Jet Black + Sport Band Black",
+      "Aluminum Jet Black + Sport Loop Dark Gray",
+      "Aluminum Rose Gold + Sport Band Light Blush",
+      "Aluminum Rose Gold + Sport Loop Purple Fog",
+      "Aluminum Silver + Sport Band Neon Yellow",
+      "Aluminum Silver + Sport Band Purple Fog",
+      "Aluminum Silver + Sport Loop Forest",
+      "Aluminum Silver + Sport Loop Neon Yellow",
+      "Aluminum Space Gray + Sport Band Anchor Blue",
+      "Aluminum Space Gray + Sport Band Black",
+      "Aluminum Space Gray + Sport Loop Anchor Blue",
+      "Aluminum Space Gray + Sport Loop Forest",
+      "Titanium Gold + Magnetic Link Sage Gray",
+      "Titanium Gold + Milanese Loop",
+      "Titanium Gold + Sport Band Light Blush",
+      "Titanium Gold + Sport Band Purple Fog",
+      "Titanium Natural + Magnetic Link Caramel",
+      "Titanium Natural + Milanese Loop",
+      "Titanium Natural + Sport Band Stone Gray",
+      "Titanium Slate + Magnetic Link Navy",
+      "Titanium Slate + Milanese Loop",
+      "Titanium Slate + Sport Band Black"
+    ]
+  },
+  "variants": {
+    "iPhone Duo Inner Landscape": [
+      "iPhone Duo Inner Landscape",
+      "iPhone Duo Inner Partially Open Landscape"
+    ],
+    "iPhone Duo Inner Portrait": [
+      "iPhone Duo Inner Portrait",
+      "iPhone Duo Inner Partially Open Portrait"
+    ],
+    "iPhone 17 Portrait": [
+      "iPhone 18 Pro Portrait",
+      "iPhone 17 Pro Portrait",
+      "iPhone 17 Portrait",
+      "iPhone 16 Pro Portrait"
+    ],
+    "iPhone 17 Landscape": [
+      "iPhone 18 Pro Landscape",
+      "iPhone 17 Pro Landscape",
+      "iPhone 17 Landscape",
+      "iPhone 16 Pro Landscape"
+    ],
+    "iPhone 17 Pro Max Portrait": [
+      "iPhone 18 Pro Max Portrait",
+      "iPhone 17 Pro Max Portrait",
+      "iPhone 16 Pro Max Portrait"
+    ],
+    "iPhone 17 Pro Max Landscape": [
+      "iPhone 18 Pro Max Landscape",
+      "iPhone 17 Pro Max Landscape",
+      "iPhone 16 Pro Max Landscape"
+    ],
+    "iPhone 16 Portrait": [
+      "iPhone 16 Portrait",
+      "iPhone 15 Pro Portrait"
+    ],
+    "iPhone 16 Landscape": [
+      "iPhone 16 Landscape",
+      "iPhone 15 Pro Landscape"
+    ],
+    "iPhone 16 Plus Portrait": [
+      "iPhone 16 Plus Portrait",
+      "iPhone 15 Pro Max Portrait"
+    ],
+    "iPhone 16 Plus Landscape": [
+      "iPhone 16 Plus Landscape",
+      "iPhone 15 Pro Max Landscape"
+    ],
+    "MacBook Pro M5 14": [
+      "MacBook Pro M5 14",
+      "MacBook Pro 2021 14"
+    ],
+    "MacBook Pro M5 16": [
+      "MacBook Pro M5 16",
+      "MacBook Pro 2021 16"
+    ],
+    "MacBook Air M5 13": [
+      "MacBook Air M5 13",
+      "MacBook Air 2022"
+    ],
+    "Studio Display": [
+      "Studio Display",
+      "Studio Display XDR"
+    ],
+    "Watch Ultra 3": [
+      "Watch Ultra 4",
+      "Watch Ultra 3"
+    ],
+    "Watch Series 11 42": [
+      "Watch Series 11 42",
+      "Watch Series 10 42"
+    ],
+    "Watch Series 11 46": [
+      "Watch Series 11 46",
+      "Watch Series 10 46"
+    ]
+  },
+  "aliases": {
+    "iPhone Duo Book Pose": "iPhone Duo Inner Partially Open Landscape",
+    "iPhone Duo Laptop Pose": "iPhone Duo Inner Partially Open Portrait"
+  },
+  "colorParents": {
+    "iPhone Duo Inner Partially Open": "iPhone Duo Inner"
+  },
+  "colorOrder": [
+    "iPhone Duo Outer Portrait",
+    "iPhone Duo Outer Landscape",
+    "iPhone Duo Inner Portrait",
+    "iPhone Duo Inner Landscape",
+    "iPhone Duo Inner Partially Open Landscape",
+    "iPhone Duo Inner Partially Open Portrait",
+    "iPhone Duo Outer Open",
+    "iPhone 18 Pro Portrait",
+    "iPhone 18 Pro Landscape",
+    "iPhone 18 Pro Max Portrait",
+    "iPhone 18 Pro Max Landscape",
+    "iPhone 17 Pro Portrait",
+    "iPhone 17 Pro Landscape",
+    "iPhone 17 Pro Max Portrait",
+    "iPhone 17 Pro Max Landscape",
+    "iPhone 17 Portrait",
+    "iPhone 17 Landscape",
+    "iPhone Air Portrait",
+    "iPhone Air Landscape",
+    "MacBook Pro M5 14",
+    "MacBook Pro M5 16",
+    "MacBook Pro PROLED 14",
+    "MacBook Pro PROLED 16",
+    "MacBook Neo",
+    "iPhone 16 Pro Portrait",
+    "iPhone 16 Pro Landscape",
+    "iPhone 16 Pro Max Portrait",
+    "iPhone 16 Pro Max Landscape",
+    "iPhone 16 Portrait",
+    "iPhone 16 Landscape",
+    "iPhone 16 Plus Portrait",
+    "iPhone 16 Plus Landscape",
+    "iPad mini A20 Pro Portrait",
+    "iPad mini A20 Pro Landscape",
+    "Watch Ultra 4",
+    "Watch Ultra 3",
+    "Watch Ultra 2024",
+    "MacBook Air M5 13",
+    "MacBook Air M5 15",
+    "iMac M4",
+    "Studio Display",
+    "Studio Display XDR",
+    "HomeView",
+    "HomeView Wall Mounted",
+    "Watch Series 11 42",
+    "Watch Series 11 46"
+  ]
+}

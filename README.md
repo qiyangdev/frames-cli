@@ -1,6 +1,6 @@
 ![](https://cdn.macstories.net/friday-10-apr-2026-14-28-25-1775824188552.png)
 
-Frame device screenshots and screen recordings with Apple product bezels from the command line. Auto-detects devices, supports colors, merging, and batch processing. Based on the Apple Frames shortcut by me for MacStories.net, not affiliated with Apple.
+Frame screenshots and screen recordings with Apple device bezels. This Swift fork of [frames-cli](https://github.com/viticci/frames-cli) provides a Swift Package with a framing library, a CLI, and tools for building asset packs. It supports device detection, color selection, merging, and batch processing.
 
 [Read the changelog](CHANGELOG.md) for release details.
 
@@ -8,76 +8,53 @@ Frame device screenshots and screen recordings with Apple product bezels from th
 
 ## Installation
 
-### Requirements
-- Python 3.8+
-- Pillow (Python imaging library)
-- ffmpeg 5.1+ and ffprobe 5.1+ for video framing (`frames setup` checks this and can install ffmpeg with Homebrew on macOS)
-
-### Option A: Clone the repo (recommended)
+The `frames` and `frames-pack` executables require macOS 15 or later and Swift 6 or later to build.
 
 ```bash
-git clone https://github.com/viticci/frames-cli.git
+git clone https://github.com/qiyangdev/frames-cli.git
 cd frames-cli
-pip3 install Pillow
+swift build -c release
+swift run -c release frames --version
 ```
 
-Then symlink the script into a directory that's already in your PATH:
+Use `swift run -c release frames` and `swift run -c release frames-pack` from the checkout, or symlink the release binaries into a directory on your PATH. Keep the release build directory in place because `frames` loads its device rules from the resource bundle there.
 
 ```bash
-# Check which bin directory is in your PATH (use the first one that exists)
-# Common locations: ~/.local/bin, ~/bin, /usr/local/bin
-
-# Create the directory if needed, then symlink
 mkdir -p ~/.local/bin
-ln -s "$(pwd)/frames" ~/.local/bin/frames
-```
-
-If `~/.local/bin` isn't in your PATH yet, add it to `~/.zshrc` (or `~/.bashrc`):
-
-```bash
+bin_dir="$(swift build -c release --show-bin-path)"
+ln -s "$bin_dir/frames" ~/.local/bin/frames
+ln -s "$bin_dir/frames-pack" ~/.local/bin/frames-pack
 export PATH="$HOME/.local/bin:$PATH"
 ```
-
-Then restart your terminal or run `source ~/.zshrc`.
-
-Verify it works:
-
-```bash
-frames --version
-```
-
-### Option B: Direct download
-
-```bash
-pip3 install Pillow
-mkdir -p ~/.local/bin
-curl -o ~/.local/bin/frames https://raw.githubusercontent.com/viticci/frames-cli/main/frames
-chmod +x ~/.local/bin/frames
-```
-
-If `~/.local/bin` isn't in your PATH yet, add it to `~/.zshrc` (or `~/.bashrc`):
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Then restart your terminal or run `source ~/.zshrc`.
 
 ### Setup
 
-The CLI offers to download Apple Frames 4 assets when a command needs them and you run it interactively. Setup also checks video requirements and, on macOS, can install ffmpeg for you with Homebrew if it is missing. You can also set up manually:
-
 ```bash
-# Guided download (interactive — downloads ~55 MB from cdn.macstories.net)
-frames setup
-
-# Or point to an existing assets folder
-frames setup /path/to/Frames
+frames setup                        # Download the current 55 MB asset pack
+frames setup /path/to/Frames        # Configure an existing pack
+frames setup --archive /path/to/AppleFrames431.zip
+frames doctor
 ```
 
-The guided setup downloads the asset pack, extracts it, and saves the path to `~/.config/frames/config.json`. If assets get corrupted or you need a fresh copy, run `frames setup` again to re-download.
+Downloaded archives are verified against the release SHA-256 before extraction. The CLI saves its settings to `~/.config/frames/config.json`. To select assets for one invocation, use `--assets PATH` or set `FRAMES_ASSETS`. Without an explicit path, the CLI can reuse the Apple Frames Shortcuts folder or use `~/Library/Application Support/frames/assets`.
 
-You can also set the `FRAMES_ASSETS` environment variable instead of using the config file.
+### Swift library
+
+Add this repository to your Xcode project as a Swift Package and link the `FramesCore` product. The library supports macOS 15 and iOS/iPadOS 18 or later. It reads the existing Apple Frames catalog and renders through Apple's media frameworks.
+
+```swift
+import FramesCore
+
+let catalog = try FrameCatalog(directory: assetsURL)
+let renderer = FramesRenderer(catalog: catalog)
+let framed = try renderer.frameImage(
+    at: screenshotURL,
+    options: FrameOptions(device: "iPhone Duo Book Pose", color: "Star White")
+)
+try FramesRenderer.writePNG(framed.image, to: outputURL)
+```
+
+Use `FrameAssets.download()` to install assets into the app's Application Support directory. Use `describeVideo(_:)` for media inspection and `exportVideo(_:to:options:progress:)` for asynchronous export with cancellation and progress.
 
 ### iPhone 18 Pro and 18 Pro Max
 
@@ -289,7 +266,7 @@ frames video -m --alpha 1.mp4 2.mp4
 frames video -m --background transparent 1.mp4 2.mp4
 ```
 
-Video support requires `ffmpeg` 5.1+ and `ffprobe` 5.1+. `frames setup` checks for both and can install ffmpeg with Homebrew on macOS. Supported input extensions are `.mp4`, `.mov`, and `.m4v`.
+Video uses the system AVFoundation encoders. Supported input extensions are `.mp4`, `.mov`, and `.m4v`.
 
 Single-video output is `originalname_framed.mp4` by default, or `.mov` for `--alpha`, `--codec prores`, `--codec hevc-alpha`, or `--background transparent`. Audio is preserved unless `--strip-audio` is passed.
 
@@ -303,13 +280,13 @@ Use `--alpha` or `--background transparent` to create transparent ProRes 4444 `.
 
 ProRes 4444 preserves transparency for editing and compositing, but its files can be much larger than the source MP4. Use `--codec hevc-alpha` for compressed transparent delivery to compatible Apple apps and devices. Support varies by app; use ProRes when your editing workflow requires it. Use an opaque MP4 export when you only need a different background color. Presets do not reduce ProRes file sizes.
 
-HEVC-alpha requires macOS and an ffmpeg build with VideoToolbox HEVC alpha support. Frames checks encoder support before rendering and reports an error if it is unavailable; it never silently switches to opaque HEVC or ProRes. Rotation, per-input colors, device masks, single exports, and both merge playback modes are supported. Audio follows the existing rules below.
+HEVC alpha uses AVFoundation's native encoder. Export availability depends on the device and requested dimensions. Rotation, per-input colors, device masks, single exports, and both merge playback modes are supported. Audio follows the existing rules below.
 
-HEVC stores transparency in an auxiliary layer. `ffprobe` may report `yuv420p` without exposing that alpha layer. Verify transparency with a compatible native Apple decoder; the optional regression test uses AVFoundation.
+HEVC stores transparency in an auxiliary layer. Verify transparency with a native Apple decoder or playback in QuickTime Player.
 
 Interactive video renders show a live progress bar. The live progress bar is disabled for JSON and non-interactive runs. Completed video exports report output size and source-vs-output savings in both human output and JSON.
 
-Video presets tune export size and quality. `best` is the default. For MP4, `balanced` and `compact` lower H.264/HEVC bitrate for hardware encoding and use higher CRF values for software encoding. `--quality N` remains an expert CRF override for software MP4 encoders only; lower is higher quality. For HEVC-alpha, `compact`, `balanced`, and `best` target 4, 7, and 10 Mbps respectively; these are bitrate targets, not file-size guarantees. HEVC-alpha rejects `--quality`; use `--preset` instead.
+Video presets tune export size and quality. `best` is the default. For MP4, `balanced` and `compact` lower the H.264/HEVC target bitrate. `--quality N` selects a native encoding quality level from 0 to 51, with lower values favoring quality. For HEVC-alpha, `compact`, `balanced`, and `best` target 4, 7, and 10 Mbps respectively; these are bitrate targets, not file-size guarantees. HEVC-alpha rejects `--quality`; use `--preset` instead.
 
 For MP4/H.264, MP4/HEVC, and HEVC-alpha MOV output, Frames pads odd dimensions to even encoded dimensions so the encoder preserves the full frame and, where supported, transparency. Single-video JSON reports the encoded `output_dimensions` and whether it was `padded`. In HEVC-alpha merges, per-input `output_dimensions` describe the raw device frame before physical scaling, with `padded: false`; only the final canvas is padded as needed, and the top-level `dimensions` report its encoded size.
 
@@ -392,7 +369,7 @@ frames --json video-info recording.mp4
 frames --json video-info --colors "Silver,random" 1.mp4 2.mp4
 ```
 
-`video-info` uses the same device, variant, color, ffmpeg, and ffprobe checks as `frames video`. It reports dimensions, duration, fps, codec, audio state, matched device, selected color, frame size, mask state, and resize metadata.
+`video-info` uses the same device, variant, color, and asset checks as `frames video`. It reports dimensions, duration, fps, codec, audio state, matched device, selected color, frame size, mask state, and resize metadata.
 
 `video-info` inspects the source and frame match; it does not select an output codec. Its output geometry assumes the default MP4 export. For rendered-video presets and transparency options, see `video` above.
 
@@ -466,7 +443,7 @@ frames --subfolder mockups *.png
 # saves all to ./mockups/
 ```
 
-To make subfolder mode the default, run `frames setup --subfolder`. To revert, run `frames setup --no-subfolder`. These commands only update the saved setting; they do not download assets or check video tools.
+To make subfolder mode the default, run `frames setup --subfolder`. To revert, run `frames setup --no-subfolder`. These commands update the saved output-folder preference.
 
 ---
 
@@ -536,7 +513,7 @@ frames list
 
 ### `colors`
 
-Interactive TUI color picker (curses). Navigate with arrow keys, select with space, confirm with enter. Sets per-device default colors stored in `~/.config/frames/config.json`.
+Use the arrow keys to navigate, Space to select a finish, Enter to save, or q to cancel. To set a preference directly use `frames colors --device NAME --color COLOR`. Defaults are stored in `~/.config/frames/config.json`.
 
 ```bash
 frames colors
@@ -584,7 +561,7 @@ frames setup --subfolder /path/to/Frames     # enable subfolder mode by default
 frames setup --no-subfolder /path/to/Frames  # disable subfolder mode (default)
 ```
 
-If assets are missing or outdated, commands that need them offer to download them in an interactive terminal. JSON and non-interactive runs fail instead; JSON output includes `setup_required: true`.
+Interactive commands can offer a download when the asset pack is missing or outdated. In automation, run `frames setup --archive PATH` to install from a downloaded ZIP, or use `--assets PATH` to select an existing pack. JSON errors include `setup_required: true` when an asset pack is required.
 
 ---
 
@@ -616,7 +593,7 @@ The `setup` and `colors` commands write to `~/.config/frames/config.json`:
 }
 ```
 
-**Assets priority order:** `--assets` flag > `FRAMES_ASSETS` env var > config file > default iCloud Shortcuts path.
+**Assets priority order:** `--assets` flag > `FRAMES_ASSETS` env var > config file > existing iCloud Shortcuts assets > existing Application Support assets.
 
 **Color priority order:** `--colors` per-input value > `--color` flag > config default (set via `colors` command) > first color in device list.
 
@@ -634,7 +611,7 @@ For commands that support `--json`, successful results go to stdout. Verbose dia
 
 ```bash
 # Frame a screenshot, capture the output path
-OUTPUT=$(frames --json screenshot.png | python3 -c "import sys,json; print(json.load(sys.stdin)['output'])")
+OUTPUT=$(frames --json screenshot.png | plutil -extract output raw -o - -)
 
 # Get device info as JSON
 frames --json info screenshot.png
@@ -687,18 +664,36 @@ Watch Ultra 4 supports 6 case + band combinations and Watch Ultra 3 supports 13.
 
 ## Development
 
-From a repository checkout with Pillow installed, run the test suite:
+Run the Swift tests from a macOS checkout.
 
 ```bash
-python3 -m unittest discover -s tests -v
+swift test
 ```
 
-The video rendering tests also need `ffmpeg` and `ffprobe`; they are skipped when either tool is missing. Tests create temporary inputs and assets. The optional native HEVC-alpha test also requires macOS, a working `swiftc`, and ffmpeg HEVC alpha support. It skips when prerequisites are unavailable; otherwise, failures fail the suite. It decodes exports through AVFoundation to check transparency, masks, geometry, and opaque backgrounds.
+`Sources/FramesCore` contains the catalog, asset installation, and media engine. `Sources/FramesCLI` contains the framing CLI. `Sources/FramesPack` contains the asset builders and pack maintenance commands. The Swift tests cover the CLI, rendering, video and audio export, and asset packs using temporary fixtures.
 
-The iPhone 18 Pro tests cover the new shared-size defaults, the fallback to 17 Pro with older packs, explicit 17 Pro selection, `list`, and the `doctor` note. The Duo tests cover device listing, exact resolution matching at simulator and announced sizes, both finishes, the manual rear view, the partially open poses, explicit image/video resize dimensions, enclosed screen masks, metadata removal, and the `doctor` note. They use small synthetic assets; the [Duo guide](docs/iphone-duo.md) describes how the pack is built and checked.
+### Maintain asset packs
+
+The macOS `frames-pack` executable builds asset packs and creates local release ZIPs.
+
+```bash
+swift run frames-pack --help
+swift run frames-pack release BUILT --base PREVIOUS.zip --version 4.3.2 \
+  --added "New Frame" --output Frames-4.3.2 --archive AppleFrames432.zip
+```
+
+- `release` verifies previously shipped files and catalog entries, then writes a versioned directory, a reproducible ZIP, and its SHA-256.
+- `trim` crops flat bezels and updates their offsets. `optimize` checks both lossless compression and visually bounded quantization. Install `oxipng` for `trim`, and both `oxipng` and `pngquant` for `optimize` and `build-mini-ultra4`.
+- `build-duo`, `build-duo-folded`, `build-proled`, `build-homeview`, and `build-mini-ultra4` prepare artwork and catalog entries for their devices. Each command's `--help` shows the required input files and output flags.
+
+The original Python implementation and tests are available in Git at commit `6ba4ed3`.
 
 ---
 
 ## Credits
 
-by Federico Viticci, [MacStories.net](https://www.macstories.net)
+Federico Viticci created the original frames-cli and the Apple Frames shortcut for MacStories. qiyangdev maintains this Swift fork. [MacStories](https://www.macstories.net)
+
+## License
+
+The software is distributed under the [MIT License](LICENSE). The downloaded artwork is covered by the terms included with its asset pack. Apple bezel artwork is subject to the Apple Design Resources License. This project is unaffiliated with Apple.
