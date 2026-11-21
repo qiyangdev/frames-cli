@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 — 2026-11-21
 
 - Migrate the framing CLI to Swift. Build `frames` on macOS 15 or later with Swift 6.
 - Add the `FramesCore` library for macOS 15 and iOS/iPadOS 18 or later. Image and video processing use Apple's media frameworks.
 - Move the asset builders and pack maintenance commands into the macOS `frames-pack` executable.
 - Keep the existing asset catalog and saved CLI settings compatible with the Swift implementation.
+- Continue using asset pack 4.3.1. Run `frames setup` if you need to download it.
 
 ## 1.8.0 — 2026-11-18
 

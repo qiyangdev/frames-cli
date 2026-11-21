@@ -6,7 +6,7 @@ import FramesCore
 
 @main
 struct FramesCommand {
-    static let version = "1.8.0"
+    static let version = "2.0.0"
 
     static func main() async {
         let raw = Array(CommandLine.arguments.dropFirst())
