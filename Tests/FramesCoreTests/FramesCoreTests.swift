@@ -98,6 +98,102 @@ import Testing
     }
 }
 
+@Test func exportsTransparentOuterPaddingAroundComposedFrames() throws {
+    try withFixture("""
+        {"2": {"name": "Phone", "x": 0, "y": 0}}
+        """) { directory in
+        let bounds = CGRect(x: 0, y: 0, width: 2, height: 2)
+        try write(CIImage(color: .clear).cropped(to: bounds), to: directory.appending(path: "Phone.png"))
+        let renderer = try FramesRenderer(catalog: FrameCatalog(directory: directory))
+        let frame = try renderer.frameImage(makeImage(CIImage(color: .green).cropped(to: bounds)))
+        let single = try renderer.composeImages([frame], padding: .init(2))
+        #expect(single.image.width == 6)
+        #expect(single.image.height == 6)
+
+        let composition = try renderer.composeImages([frame, frame], spacing: 3,
+                                                     padding: .init(top: 1, left: 2, bottom: 3, right: 4))
+        let output = directory.appending(path: "padded.png")
+        try FramesRenderer.writePNG(composition.image, to: output)
+        let exported = try FramesRenderer.readImage(output)
+        #expect(exported.width == 13)
+        #expect(exported.height == 6)
+        #expect(composition.scaleFactors == [1, 1])
+        for (x, y) in [(1, 3), (9, 3), (2, 2), (2, 5), (4, 3), (6, 3)] {
+            #expect(try pixel(exported, x: x, y: y)[3] == 0)
+        }
+        for (x, y) in [(2, 3), (3, 4), (7, 3), (8, 4)] {
+            #expect(try pixel(exported, x: x, y: y) == [0, 255, 0, 255])
+        }
+        #expect(throws: FramesError.self) { try renderer.composeImages([frame], padding: .init(left: -1)) }
+        #expect(throws: FramesError.self) { try renderer.composeImages([frame], padding: .init(right: 50_000)) }
+    }
+}
+
+@Test func fitsSeveralFramesWithoutChangingCanvasSizeOrSpacing() throws {
+    try withFixture("""
+        {"2": {"name": "Phone", "x": 0, "y": 0}}
+        """) { directory in
+        let bounds = CGRect(x: 0, y: 0, width: 2, height: 2)
+        try write(CIImage(color: .clear).cropped(to: bounds), to: directory.appending(path: "Phone.png"))
+        let renderer = try FramesRenderer(catalog: FrameCatalog(directory: directory))
+        let frame = try renderer.frameImage(makeImage(CIImage(color: .green).cropped(to: bounds)))
+        let composition = try renderer.composeImagesFittingCanvas([frame, frame], spacing: 3,
+                                                                   padding: .init(left: 1, right: 1))
+        #expect(composition.image.width == 7)
+        #expect(composition.image.height == 2)
+        #expect(composition.frameBounds == [CGRect(x: 1, y: 0, width: 1, height: 1),
+                                            CGRect(x: 5, y: 0, width: 1, height: 1)])
+        #expect(try pixel(composition.image, x: 1, y: 1) == [0, 255, 0, 255])
+        #expect(try pixel(composition.image, x: 4, y: 1)[3] == 0)
+
+        let fixed = try renderer.composeImagesFittingCanvas([frame], canvasSize: .init(width: 8, height: 8),
+                                                             padding: .init(top: 2, left: 2, bottom: 1, right: 1))
+        #expect(fixed.image.width == 8)
+        #expect(fixed.image.height == 8)
+        #expect(fixed.frameBounds == [CGRect(x: 2, y: 2, width: 5, height: 5)])
+        #expect(throws: FramesError.self) {
+            try renderer.composeImagesFittingCanvas([frame, frame], spacing: 3, padding: .init(left: 7))
+        }
+    }
+}
+
+@Test func fitsImagesIntoSmallerAndLargerCanvases() throws {
+    try withFixture("{}") { directory in
+        let image = try makeImage(CIImage(color: .green).cropped(to: CGRect(x: 0, y: 0, width: 4, height: 2)))
+        let renderer = try FramesRenderer(catalog: FrameCatalog(directory: directory))
+        let smaller = try renderer.fittingImage(image, to: .init(width: 2, height: 3))
+        #expect(smaller.width == 2)
+        #expect(smaller.height == 3)
+        #expect(try pixel(smaller, x: 0, y: 0)[3] == 0)
+        #expect(try pixel(smaller, x: 1, y: 1) == [0, 255, 0, 255])
+        #expect(try pixel(smaller, x: 1, y: 2)[3] == 0)
+
+        let larger = try renderer.fittingImage(image, to: .init(width: 8, height: 8))
+        #expect(larger.width == 8)
+        #expect(larger.height == 8)
+        #expect(try pixel(larger, x: 0, y: 1)[3] == 0)
+        #expect(try pixel(larger, x: 0, y: 2) == [0, 255, 0, 255])
+        #expect(try pixel(larger, x: 7, y: 5) == [0, 255, 0, 255])
+        #expect(try pixel(larger, x: 7, y: 6)[3] == 0)
+        #expect(throws: FramesError.self) { try renderer.fittingImage(image, to: .init(width: 0, height: 8)) }
+    }
+}
+
+@Test func appliesBackgroundWithoutChangingImageSize() throws {
+    try withFixture("{}") { directory in
+        let canvas = CIImage(color: .clear).cropped(to: CGRect(x: 0, y: 0, width: 3, height: 2))
+        let content = CIImage(color: .green).cropped(to: CGRect(x: 1, y: 0, width: 1, height: 1))
+        let image = try makeImage(content.composited(over: canvas))
+        let renderer = try FramesRenderer(catalog: FrameCatalog(directory: directory))
+        let result = try renderer.applyingBackground(CGColor(srgbRed: 1, green: 0, blue: 0, alpha: 1), to: image)
+        #expect(result.width == image.width)
+        #expect(result.height == image.height)
+        #expect(try pixel(result, x: 0, y: 0) == [255, 0, 0, 255])
+        #expect(try pixel(result, x: 1, y: 0) == [0, 255, 0, 255])
+        #expect(try pixel(image, x: 0, y: 0)[3] == 0)
+    }
+}
+
 @Test func rejectsUnrecognizedArchiveBeforeReplacingAssets() throws {
     try withFixture("{}") { directory in
         let archive = directory.appending(path: "invalid.zip")

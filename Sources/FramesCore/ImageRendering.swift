@@ -39,6 +39,27 @@ public struct FramedImage: Sendable {
 public struct ImageComposition: Sendable {
     public let image: CGImage
     public let scaleFactors: [Double]
+    /// Frame rectangles in output pixels, measured from the top-left of the canvas.
+    public let frameBounds: [CGRect]
+}
+
+/// Transparent insets around the composed image, measured in output pixels.
+public struct ImagePadding: Sendable {
+    public let top: Int
+    public let left: Int
+    public let bottom: Int
+    public let right: Int
+
+    public init(top: Int = 0, left: Int = 0, bottom: Int = 0, right: Int = 0) {
+        self.top = top
+        self.left = left
+        self.bottom = bottom
+        self.right = right
+    }
+
+    public init(_ pixels: Int) {
+        self.init(top: pixels, left: pixels, bottom: pixels, right: pixels)
+    }
 }
 
 struct RenderPlan {
@@ -98,16 +119,50 @@ public struct FramesRenderer: Sendable {
         return FramedImage(image: try makeImage(result), description: plan.description)
     }
 
+    /// Composes frames with inter-frame spacing and optional outer padding in output pixels.
     public func composeImages(_ frames: [FramedImage], spacing: Int = 60,
-                              proportional: Bool = true) throws -> ImageComposition {
+                              proportional: Bool = true, padding: ImagePadding = .init()) throws -> ImageComposition {
         let images = frames.map { CIImage(cgImage: $0.image) }
         let arrangement = try layout(images, physicalHeights: frames.map { $0.description.match.device.physicalHeight },
-                                     spacing: spacing, proportional: proportional, bottomAlign: false)
+                                     spacing: spacing, proportional: proportional, bottomAlign: false, padding: padding)
+        return try compose(images, frames: frames, arrangement: arrangement)
+    }
+
+    /// Fits the frames into a fixed canvas, keeping padding and spacing in output pixels.
+    /// With no explicit canvas size, the unpadded composition determines the output dimensions.
+    public func composeImagesFittingCanvas(_ frames: [FramedImage], canvasSize: PixelSize? = nil,
+                                           spacing: Int = 60, padding: ImagePadding = .init()) throws -> ImageComposition {
+        let images = frames.map { CIImage(cgImage: $0.image) }
+        let natural = try layout(images, physicalHeights: frames.map { $0.description.match.device.physicalHeight },
+                                 spacing: spacing, proportional: true, bottomAlign: false)
+        let arrangement = try fittingLayout(natural, to: canvasSize ?? natural.size, spacing: spacing, padding: padding)
+        return try compose(images, frames: frames, arrangement: arrangement)
+    }
+
+    private func compose(_ images: [CIImage], frames: [FramedImage], arrangement: Layout) throws -> ImageComposition {
         let image = try makeImage(merge(images, layout: arrangement, background: nil))
         let factors = zip(arrangement.placements, frames).map { placement, frame in
             Double(placement.size.height) / Double(frame.image.height)
         }
-        return ImageComposition(image: image, scaleFactors: factors)
+        let bounds = arrangement.placements.map {
+            CGRect(x: $0.x, y: $0.top, width: $0.size.width, height: $0.size.height)
+        }
+        return ImageComposition(image: image, scaleFactors: factors, frameBounds: bounds)
+    }
+
+    /// Fills the transparent areas of an image with a background color at its original size.
+    public func applyingBackground(_ color: CGColor, to image: CGImage) throws -> CGImage {
+        let foreground = CIImage(cgImage: image)
+        let background = CIImage(color: CIColor(cgColor: color)).cropped(to: foreground.extent)
+        return try makeImage(foreground.composited(over: background))
+    }
+
+    /// Scales an image to fit a fixed-size transparent canvas, preserving its aspect ratio.
+    public func fittingImage(_ image: CGImage, to canvasSize: PixelSize) throws -> CGImage {
+        let size = PixelSize(width: image.width, height: image.height)
+        let natural = Layout(size: size, placements: [Placement(x: 0, top: 0, size: size)])
+        let arrangement = try fittingLayout(natural, to: canvasSize, spacing: 0, padding: .init())
+        return try makeImage(merge([CIImage(cgImage: image)], layout: arrangement, background: nil))
     }
 
     public static func writePNG(_ image: CGImage, to url: URL) throws {
@@ -144,7 +199,12 @@ public struct FramesRenderer: Sendable {
         default: return image
         }
         guard let colorSpace = image.colorSpace, let provider = image.dataProvider else { return image }
-        let bitmapInfo = image.bitmapInfo.subtracting(.alphaInfoMask).union(CGBitmapInfo(rawValue: alpha.rawValue))
+        var bitmapInfo = image.bitmapInfo.subtracting(.alphaInfoMask).union(CGBitmapInfo(rawValue: alpha.rawValue))
+        if image.bitsPerComponent == 8, image.bitsPerPixel == 32,
+           bitmapInfo.intersection(.byteOrderMask).isEmpty {
+            // Core Image can misread ImageIO's RGBX data when the byte order is implicit.
+            bitmapInfo.insert(.byteOrder32Big)
+        }
         return CGImage(width: image.width, height: image.height, bitsPerComponent: image.bitsPerComponent,
                        bitsPerPixel: image.bitsPerPixel, bytesPerRow: image.bytesPerRow, space: colorSpace,
                        bitmapInfo: bitmapInfo, provider: provider, decode: nil,
@@ -384,10 +444,53 @@ public struct FramesRenderer: Sendable {
         let placements: [Placement]
     }
 
+    private func fittingLayout(_ natural: Layout, to canvas: PixelSize, spacing: Int,
+                               padding: ImagePadding) throws -> Layout {
+        try canvas.validate()
+        guard [padding.top, padding.left, padding.bottom, padding.right].allSatisfy((0...50_000).contains) else {
+            throw FramesError("Expected nonnegative padding within the canvas limit.")
+        }
+        let count = natural.placements.count
+        let gaps = spacing * (count - 1)
+        let availableWidth = canvas.width - padding.left - padding.right - gaps
+        let availableHeight = canvas.height - padding.top - padding.bottom
+        guard availableWidth >= count, availableHeight > 0 else {
+            throw FramesError("Reduce the padding to fit the canvas.")
+        }
+
+        let scale = min(Double(availableWidth) / Double(natural.size.width - gaps),
+                        Double(availableHeight) / Double(natural.size.height))
+        let fittedHeight = max(1, Int((Double(natural.size.height) * scale).rounded()))
+        var idealRight = 0.0
+        var right = 0
+        let widths = natural.placements.enumerated().map { index, placement in
+            // Round shared edges so the rounded widths fit without changing the gaps.
+            idealRight += Double(placement.size.width) * scale
+            let remaining = count - index - 1
+            let next = min(availableWidth - remaining, max(right + 1, Int(idealRight.rounded())))
+            let width = next - right
+            right = next
+            return width
+        }
+        var x = padding.left + (availableWidth - right) / 2
+        let y = padding.top + (availableHeight - fittedHeight) / 2
+        let placements = zip(natural.placements, widths).map { placement, width in
+            let top = min(fittedHeight - 1, Int((Double(placement.top) * scale).rounded()))
+            let bottom = Int((Double(placement.top + placement.size.height) * scale).rounded())
+            let fitted = Placement(x: x, top: y + top, size: .init(width: width, height: max(1, bottom - top)))
+            x += width + spacing
+            return fitted
+        }
+        return Layout(size: canvas, placements: placements)
+    }
+
     func layout(_ images: [CIImage], physicalHeights: [Double], spacing: Int,
-                proportional: Bool, bottomAlign: Bool) throws -> Layout {
+                proportional: Bool, bottomAlign: Bool, padding: ImagePadding = .init()) throws -> Layout {
         guard !images.isEmpty, images.count == physicalHeights.count, (0...50_000).contains(spacing) else {
             throw FramesError("Expected one or more frames and nonnegative spacing within the canvas limit.")
+        }
+        guard [padding.top, padding.left, padding.bottom, padding.right].allSatisfy((0...50_000).contains) else {
+            throw FramesError("Expected nonnegative padding within the canvas limit.")
         }
         let sizes = images.map { PixelSize(width: Int($0.extent.width), height: Int($0.extent.height)) }
         let scale = proportional && physicalHeights.allSatisfy { $0 > 0 } && Set(physicalHeights).count > 1
@@ -412,14 +515,16 @@ public struct FramesRenderer: Sendable {
             Int((Double(bodies[i].upperBound) * Double(output[i].height) / Double(sizes[i].height)).rounded(.toNearestOrEven))
         }
         let line = bottoms.max() ?? 0
-        var x = 0
+        var x = padding.left
         let placements = output.indices.map { i in
             let offset = line - bottoms[i]
-            let placement = Placement(x: x, top: scale || bottomAlign ? offset : offset / 2, size: output[i])
+            let top = padding.top + (scale || bottomAlign ? offset : offset / 2)
+            let placement = Placement(x: x, top: top, size: output[i])
             x += output[i].width + spacing
             return placement
         }
-        let size = PixelSize(width: x - spacing, height: placements.map { $0.top + $0.size.height }.max() ?? 0)
+        let size = PixelSize(width: x - spacing + padding.right,
+                             height: (placements.map { $0.top + $0.size.height }.max() ?? 0) + padding.bottom)
         try size.validate()
         return Layout(size: size, placements: placements)
     }
